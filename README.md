@@ -11,7 +11,7 @@ cargo build --release
 ## Usage
 
 ```
-# After Start Clash with Resful API
+# Before, Start Clash with Resful API
 ./target/release/bd
 ```
 
