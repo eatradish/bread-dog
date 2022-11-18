@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use anyhow::{anyhow, Result};
 use dialoguer::{theme::ColorfulTheme, Select};
-use reqwest::Client;
+use reqwest::blocking::Client;
 use serde::Deserialize;
 
 use crate::config::BreadDogConfig;
@@ -20,10 +20,10 @@ pub struct ClashProxies {
     item_type: String,
 }
 
-async fn get_all(client: &Client, url: &str) -> Result<ClashResult> {
-    let resp = client.get(url).send().await?.error_for_status()?;
+fn get_all(client: &Client, url: &str) -> Result<ClashResult> {
+    let resp = client.get(url).send()?.error_for_status()?;
 
-    let json = resp.json::<ClashResult>().await?;
+    let json = resp.json::<ClashResult>()?;
 
     Ok(json)
 }
@@ -39,23 +39,23 @@ fn get_all_selector(json: ClashResult) -> Result<HashMap<String, ClashProxies>> 
     Ok(selector)
 }
 
-pub async fn dialoguer_get_selector(
+pub fn dialoguer_get_selector(
     client: &Client,
     url: &str,
 ) -> Result<HashMap<String, ClashProxies>> {
-    let all = get_all(client, &format!("{}/proxies", url)).await?;
+    let all = get_all(client, &format!("{}/proxies", url))?;
 
     let selector = get_all_selector(all)?;
 
     Ok(selector)
 }
 
-pub async fn get_proxy_dialoguer(client: &Client, config: BreadDogConfig) -> Result<()> {
+pub fn get_proxy_dialoguer(client: &Client, config: BreadDogConfig) -> Result<()> {
     let resp = client
         .get(format!("{}/proxies/{}", config.url, config.selector))
-        .send()
-        .await?;
-    let json = resp.json::<ClashProxies>().await?;
+        .send()?;
+    
+    let json = resp.json::<ClashProxies>()?;
 
     let now = json
         .now
@@ -84,20 +84,9 @@ pub async fn get_proxy_dialoguer(client: &Client, config: BreadDogConfig) -> Res
     client
         .put(format!("{}/proxies/{}", config.url, config.selector))
         .json(&json)
-        .send()
-        .await?
+        .send()?
         .error_for_status()?;
 
     Ok(())
 }
 
-#[tokio::test]
-async fn test() {
-    let all = get_all(&Client::new(), "http://localhost:9092/proxies")
-        .await
-        .unwrap();
-
-    let selector = get_all_selector(all).unwrap();
-
-    dbg!(selector);
-}

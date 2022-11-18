@@ -2,7 +2,7 @@ use std::{fs, io::{Write, Read}, path::PathBuf};
 
 use anyhow::Result;
 use dialoguer::{theme::ColorfulTheme, Input, Select};
-use reqwest::Client;
+use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 
 use crate::clash;
@@ -14,7 +14,7 @@ pub struct BreadDogConfig {
 }
 
 impl BreadDogConfig {
-    pub async fn new_from_dialoguer(client: &Client) -> Result<Self> {
+    pub fn new_from_dialoguer(client: &Client) -> Result<Self> {
         let theme = ColorfulTheme::default();
 
         let url = Input::<String>::with_theme(&theme)
@@ -22,7 +22,7 @@ impl BreadDogConfig {
             .default("http://localhost:9090".to_string())
             .interact()?;
 
-        let all_selector = clash::dialoguer_get_selector(client, &url).await?;
+        let all_selector = clash::dialoguer_get_selector(client, &url)?;
 
         let all_selector = all_selector.keys().collect::<Vec<_>>();
 
