@@ -7,7 +7,7 @@ mod clash;
 mod config;
 
 fn main() {
-    ctrlc::set_handler(|| ctrlc_handler()).expect("Can not set ctrlc handler");
+    ctrlc::set_handler(ctrlc_handler).expect("Can not set ctrlc handler");
     if let Err(e) = try_main() {
         eprintln!("{}", e);
     }
