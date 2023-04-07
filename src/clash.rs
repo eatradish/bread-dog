@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use anyhow::{anyhow, Result};
 use dialoguer::{theme::ColorfulTheme, Select};
-use reqwest::blocking::Client;
 use serde::Deserialize;
+use ureq::Agent;
 
 use crate::config::BreadDogConfig;
 
@@ -20,10 +20,13 @@ pub struct ClashProxies {
     item_type: String,
 }
 
-fn get_all(client: &Client, url: &str) -> Result<ClashResult> {
-    let resp = client.get(url).send()?.error_for_status()?;
+fn get_all(client: &Agent, url: &str) -> Result<ClashResult> {
+    let resp = client
+        .get(url)
+        .call()
+        .map_err(|e| anyhow!("Can not get Clash Resful API, why: {e}"))?;
 
-    let json = resp.json::<ClashResult>()?;
+    let json = resp.into_json::<ClashResult>()?;
 
     Ok(json)
 }
@@ -39,10 +42,7 @@ fn get_all_selector(json: ClashResult) -> Result<HashMap<String, ClashProxies>> 
     Ok(selector)
 }
 
-pub fn dialoguer_get_selector(
-    client: &Client,
-    url: &str,
-) -> Result<HashMap<String, ClashProxies>> {
+pub fn dialoguer_get_selector(client: &Agent, url: &str) -> Result<HashMap<String, ClashProxies>> {
     let all = get_all(client, &format!("{}/proxies", url))?;
 
     let selector = get_all_selector(all)?;
@@ -50,12 +50,13 @@ pub fn dialoguer_get_selector(
     Ok(selector)
 }
 
-pub fn get_proxy_dialoguer(client: &Client, config: BreadDogConfig) -> Result<()> {
+pub fn get_proxy_dialoguer(client: &Agent, config: BreadDogConfig) -> Result<()> {
     let resp = client
-        .get(format!("{}/proxies/{}", config.url, config.selector))
-        .send()?;
-    
-    let json = resp.json::<ClashProxies>()?;
+        .get(&format!("{}/proxies/{}", config.url, config.selector))
+        .call()
+        .map_err(|e| anyhow!("Can not get clash resful API, why: {e}"))?;
+
+    let json = resp.into_json::<ClashProxies>()?;
 
     let now = json
         .now
@@ -75,18 +76,16 @@ pub fn get_proxy_dialoguer(client: &Client, config: BreadDogConfig) -> Result<()
         .interact()?;
 
     if all[select_index] == now {
-        return Ok(())
+        return Ok(());
     }
 
     let mut json = HashMap::new();
-    json.insert("name", all[select_index].clone());
+    json.insert("name", all[select_index].as_str());
 
     client
-        .put(format!("{}/proxies/{}", config.url, config.selector))
-        .json(&json)
-        .send()?
-        .error_for_status()?;
+        .put(&format!("{}/proxies/{}", config.url, config.selector))
+        .send_json(json)
+        .map_err(|e| anyhow!("Can not switch to proxy {}, why: {e}", all[select_index]))?;
 
     Ok(())
 }
-

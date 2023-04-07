@@ -1,11 +1,25 @@
-use std::{fs, io::{Write, Read}, path::PathBuf};
+use std::{fs, io::Write, path::PathBuf};
 
 use anyhow::Result;
 use dialoguer::{theme::ColorfulTheme, Input, Select};
-use reqwest::blocking::Client;
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
+use ureq::Agent;
 
 use crate::clash;
+
+pub static CONFIG: Lazy<PathBuf> = Lazy::new(|| {
+    let config_dir = dirs_next::config_dir().unwrap_or(PathBuf::from(format!(
+        "{}/.config",
+        std::env::var("HOME").unwrap_or("".to_string())
+    )));
+
+    if !config_dir.exists() {
+        let _ = std::fs::create_dir_all(&config_dir);
+    }
+
+    config_dir.join("breaddog.conf")
+});
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BreadDogConfig {
@@ -14,7 +28,7 @@ pub struct BreadDogConfig {
 }
 
 impl BreadDogConfig {
-    pub fn new_from_dialoguer(client: &Client) -> Result<Self> {
+    pub fn new_from_dialoguer(client: &Agent) -> Result<Self> {
         let theme = ColorfulTheme::default();
 
         let url = Input::<String>::with_theme(&theme)
@@ -43,41 +57,18 @@ impl BreadDogConfig {
     }
 
     fn save_config(&self) -> Result<()> {
-        let s = serde_json::to_string(&self)?;
+        let v = serde_json::to_vec(&self)?;
 
-        let mut f = fs::File::create(config_path())?;
-        f.write_all(s.as_bytes())?;
+        let mut f = fs::File::create(&*CONFIG)?;
+        f.write_all(&v)?;
 
         Ok(())
     }
 
     pub fn read_from_config() -> Result<Self> {
-        let config_path = config_path();
-
-        let mut buf = Vec::new();
-
-        let mut f = fs::File::open(config_path)?;
-        f.read_to_end(&mut buf)?;
-
-        let result = serde_json::from_slice(&buf)?;
+        let f = fs::read(&*CONFIG)?;
+        let result = serde_json::from_slice(&f)?;
 
         Ok(result)
     }
-}
-
-pub fn config_is_exist() -> bool {
-    let config_path = config_path();
-
-    if config_path.is_file() {
-        return true;
-    }
-
-    return false;
-}
-
-fn config_path() -> PathBuf {
-    let config_dir = dirs_next::config_dir().expect("Can not get system config dir path!");
-    let config_path = config_dir.join("breaddog.conf");
-
-    config_path
 }
