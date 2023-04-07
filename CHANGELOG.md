@@ -7,15 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## v0.1.1 (2023-04-07)
 
+<csr-id-8c98326543d27bb325d3eaada87c793a91b36275/>
+<csr-id-6dc8ce18a3aa51ea1eb38f446feba307ca816dcd/>
+<csr-id-28a1146d7731f13a6276d7e96b078c9cfd02a505/>
+<csr-id-bfc05ddb02ff7525abf8b2d3d76c2761199fee22/>
+
 ### Chore
 
  - <csr-id-8c98326543d27bb325d3eaada87c793a91b36275/> adapt cargo-smart-release
+
+### Chore
+
+ - <csr-id-b9aada8550895fd2dac80d7232f8a1d595449adb/> add CHANGELOG
 
 ### Bug Fixes
 
  - <csr-id-3569c1190f6ec7c0a5453f10dc79eebf2bcfa52a/> ctrlc after show cursor
    - chore: use ureq replaced reqwest
-   - refactor: use OnceCell::Lazy to set config path
+- refactor: use OnceCell::Lazy to set config path
 
 ### Other
 
@@ -30,9 +39,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <csr-read-only-do-not-edit/>
 
- - 6 commits contributed to the release over the course of 140 calendar days.
+ - 7 commits contributed to the release over the course of 140 calendar days.
  - 140 days passed between releases.
- - 5 commits were understood as [conventional](https://www.conventionalcommits.org).
+ - 6 commits were understood as [conventional](https://www.conventionalcommits.org).
  - 0 issues like '(#ID)' were seen in commit messages
 
 ### Commit Details
@@ -42,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details><summary>view details</summary>
 
  * **Uncategorized**
+    - Add CHANGELOG ([`b9aada8`](https://github.com/eatradish/bread-dog/commit/b9aada8550895fd2dac80d7232f8a1d595449adb))
     - Adapt cargo-smart-release ([`8c98326`](https://github.com/eatradish/bread-dog/commit/8c98326543d27bb325d3eaada87c793a91b36275))
     - Use cargo-clippy to lint code ([`bfc05dd`](https://github.com/eatradish/bread-dog/commit/bfc05ddb02ff7525abf8b2d3d76c2761199fee22))
     - Ctrlc after show cursor ([`3569c11`](https://github.com/eatradish/bread-dog/commit/3569c1190f6ec7c0a5453f10dc79eebf2bcfa52a))
@@ -51,6 +61,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 </details>
 
 ## v0.1.0 (2022-11-18)
+
+<csr-id-bbe1ef0af88f6e2a34611371a40021d706ceaceb/>
+<csr-id-214bb95f3e161fc73b59b0ece521bf820a2c2a6e/>
 
 ### Other
 
