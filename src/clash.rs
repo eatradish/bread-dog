@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Result, Context};
 use dialoguer::{theme::ColorfulTheme, Select};
 use serde::Deserialize;
 use ureq::Agent;
@@ -18,6 +18,19 @@ pub struct ClashProxies {
     now: Option<String>,
     #[serde(rename = "type")]
     item_type: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ClashSingle {
+    #[serde(default)]
+    history: Vec<ClashSingleHistory>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ClashSingleHistory {
+    delay: u64,
+    #[serde(rename = "meanDelay")]
+    mean_delay: u64,
 }
 
 fn get_all(client: &Agent, url: &str) -> Result<ClashResult> {
@@ -51,12 +64,7 @@ pub fn dialoguer_get_selector(client: &Agent, url: &str) -> Result<HashMap<Strin
 }
 
 pub fn get_proxy_dialoguer(client: &Agent, config: BreadDogConfig) -> Result<()> {
-    let resp = client
-        .get(&format!("{}/proxies/{}", config.url, config.selector))
-        .call()
-        .map_err(|e| anyhow!("Can not get clash resful API, why: {e}"))?;
-
-    let json = resp.into_json::<ClashProxies>()?;
+    let json = get_single_selector(client, &config)?;
 
     let now = json
         .now
@@ -88,4 +96,42 @@ pub fn get_proxy_dialoguer(client: &Agent, config: BreadDogConfig) -> Result<()>
         .map_err(|e| anyhow!("Can not switch to proxy {}, why: {e}", all[select_index]))?;
 
     Ok(())
+}
+
+fn get_single_selector(client: &Agent, config: &BreadDogConfig) -> Result<ClashProxies> {
+    let resp = client
+        .get(&format!("{}/proxies/{}", config.url, config.selector))
+        .call()
+        .map_err(|e| anyhow!("Can not get clash resful API, why: {e}"))?;
+    let json = resp.into_json::<ClashProxies>()?;
+
+    Ok(json)
+}
+
+pub fn get_all_speed<F>(client: &Agent, config: &BreadDogConfig, callback: F) -> Result<()> where F: Fn(String, u64, u64) {
+    let selector = get_single_selector(client, config)?;
+    let all = selector.all.context("no all")?;
+
+    for i in all {
+        let speed = get_single_speed(client, config, &i);
+        if let Ok((delay, mean_delay)) = speed {
+            callback(i, delay, mean_delay);
+        }
+    }
+
+    Ok(())
+}
+
+fn get_single_speed(client: &Agent, config: &BreadDogConfig, proxy: &str) -> Result<(u64, u64)> {
+    let res = client
+        .get(&format!("{}/proxies/{proxy}", config.url))
+        .call()
+        .map_err(|e| anyhow!("Can not get clash resful API, why: {e}"))?;
+
+    let json = res.into_json::<ClashSingle>()?;
+    let history = json.history;
+    let speed = history.last().context("No speed?")?;
+    let res = (speed.delay, speed.mean_delay);
+
+    Ok(res)
 }
