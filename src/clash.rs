@@ -105,21 +105,23 @@ fn get_single_selector(client: &Agent, config: &BreadDogConfig) -> Result<ClashP
 pub fn get_all_speed<F, F2>(
     client: &Agent,
     config: &BreadDogConfig,
-    callback: F,
-    err_callback: F2,
+    mut callback: F,
+    mut err_callback: F2,
 ) -> Result<()>
 where
-    F: Fn(String, u64, u64),
-    F2: Fn(&str),
+    F: FnMut(String, u64, u64, usize),
+    F2: FnMut(&str, usize),
 {
     let selector = get_single_selector(client, config)?;
     let all = selector.all.context("no all")?;
 
+    let len = all.len();
+
     for i in all {
         let speed = get_single_speed(client, config, &i);
         match speed {
-            Ok((delay, mean_delay)) => callback(i, delay, mean_delay),
-            Err(e) => err_callback(&e.to_string()),
+            Ok((delay, mean_delay)) => callback(i, delay, mean_delay, len),
+            Err(e) => err_callback(&e.to_string(), len),
         }
     }
 
