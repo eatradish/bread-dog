@@ -20,9 +20,9 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum Subcmd {
-    /// select a proxy
+    /// Select a proxy
     Menu,
-    /// Speedtest all peoxy
+    /// Speedtest all proxy
     Speedtest,
 }
 
