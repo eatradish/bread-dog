@@ -65,7 +65,7 @@ fn speedtest(agent: &Agent, config: &BreadDogConfig) -> Result<()> {
     let pbcc = pb.clone();
     get_all_speed(
         agent,
-        &config,
+        config,
         move |proxy, delay, mean_delay, len| {
             if pb.length().map(|x| x == 0).unwrap_or(true) {
                 pb.set_length(len as u64);
