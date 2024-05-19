@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use anyhow::{anyhow, bail, Context, Result};
 use dialoguer::{theme::ColorfulTheme, Select};
+use log::{error, info};
 use serde::Deserialize;
 use ureq::{Agent, Error};
 
@@ -24,7 +25,7 @@ pub struct ClashProxies {
 pub struct ClashDelay {
     delay: u64,
     #[serde(rename = "meanDelay")]
-    mean_delay: u64,
+    mean_delay: Option<u64>,
 }
 
 fn get_all(client: &Agent, url: &str) -> Result<ClashResult> {
@@ -109,7 +110,7 @@ pub fn get_all_speed<F, F2>(
     mut err_callback: F2,
 ) -> Result<()>
 where
-    F: FnMut(String, u64, u64, usize),
+    F: FnMut(String, u64, Option<u64>, usize),
     F2: FnMut(&str, usize),
 {
     let selector = get_single_selector(client, config)?;
@@ -128,7 +129,8 @@ where
     Ok(())
 }
 
-fn get_single_speed(client: &Agent, config: &BreadDogConfig, proxy: &str) -> Result<(u64, u64)> {
+fn get_single_speed(client: &Agent, config: &BreadDogConfig, proxy: &str) -> Result<(u64, Option<u64>)> {
+    info!("GET {}", format!("{}/proxies/{proxy}/delay", config.url));
     let res = match client
         .get(&format!("{}/proxies/{proxy}/delay", config.url))
         .query("url", "https://google.com")
@@ -136,11 +138,14 @@ fn get_single_speed(client: &Agent, config: &BreadDogConfig, proxy: &str) -> Res
         .call()
     {
         Ok(res) => res,
-        Err(e) => match e {
-            Error::Status(503, _) => bail!("{proxy} proxy unavailable"),
-            Error::Status(504, _) => bail!("{proxy} timeout"),
-            e => return Err(e.into()),
-        },
+        Err(e) => {
+            error!("Got Error: {:#?}", e);
+            match e {
+                Error::Status(503, _) => bail!("{proxy} proxy unavailable"),
+                Error::Status(504, _) => bail!("{proxy} timeout"),
+                e => return Err(e.into()),
+            }
+        }
     };
 
     let delay = res.into_json::<ClashDelay>()?;

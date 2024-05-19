@@ -27,6 +27,7 @@ enum Subcmd {
 }
 
 fn main() {
+    env_logger::init();
     ctrlc::set_handler(ctrlc_handler).expect("Can not set ctrlc handler");
     if let Err(e) = try_main() {
         eprintln!("{}", e);
@@ -77,19 +78,19 @@ fn speedtest(agent: &Agent, config: &BreadDogConfig) -> Result<()> {
             };
 
             let delay_str = number_str(delay);
-            let mean_delay_str = number_str(mean_delay);
-
-            let other_str = |x: &str| match mean_delay {
+            let other_str = |x: &str| match delay {
                 0..=300 => x.green().to_string(),
                 301..=800 => x.yellow().to_string(),
                 801.. => x.red().to_string(),
             };
 
             pb.println(format!(
-                "{} {delay_str} {} {mean_delay_str}{}",
+                "{} {delay_str}{}",
                 other_str(&format!("{proxy}:")),
-                other_str("(mean:"),
-                other_str(")")
+                match mean_delay {
+                    Some(mean_delay) => other_str(&format!("(mean delay: {mean_delay})")),
+                    None => "".to_string(),
+                }
             ));
             pb.inc(1);
         },
