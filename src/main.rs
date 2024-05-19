@@ -1,4 +1,4 @@
-use std::{process::exit, rc::Rc};
+use std::{borrow::Cow, process::exit, rc::Rc};
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -88,8 +88,9 @@ fn speedtest(agent: &Agent, config: &BreadDogConfig) -> Result<()> {
                 "{} {delay_str}{}",
                 other_str(&format!("{proxy}:")),
                 match mean_delay {
-                    Some(mean_delay) => other_str(&format!("(mean delay: {mean_delay})")),
-                    None => "".to_string(),
+                    Some(mean_delay) =>
+                        Cow::Owned(other_str(&format!("(mean delay: {mean_delay})"))),
+                    None => Cow::Borrowed(""),
                 }
             ));
             pb.inc(1);
